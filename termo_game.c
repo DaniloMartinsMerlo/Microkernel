@@ -4,8 +4,11 @@
 
 #define COLOR_DEFAULT 0x07 // Cinza claro sobre preto
 #define COLOR_CORRECT   0x27 // Verde sobre preto
-#define COLOR_PRESENT   0x67 // Amarelo sobre preto
+#define COLOR_PRESENT   0x67 // Marrom/Amarelo sobre preto
 #define COLOR_ABSENT    0x87 // Cinza escuro sobre preto
+
+void kprint_char(char c, int row, int col, char color);
+void set_cursor(int row, int col);
 
 //Palavras secretas
 const char* secret_words[] = {"thunder", "ratz"};
@@ -95,38 +98,39 @@ void termo_process_input(char key_char) {
 }
 
 void termo_update_screen() {
-    clear_screen();
 
     // Desenha as tentativas anteriores
-    for (int i = 0; i < MAX_ATTEMPTS; i++) {
+    for (int i = 0; i < current_attempt; i++) {
         for (int j = 0; j < strlen(current_secret_word); j++) {
             char display_char = player_guesses[i].word[j];
-            char color = COLOR_DEFAULT;
-
-            if (i < current_attempt) { // Se esta é uma tentativa já submetida
-                switch (player_guesses[i].status[j]) {
-                    case LETTER_CORRECT:
-                        color = COLOR_CORRECT;
-                        break;
-                    case LETTER_PRESENT:
-                        color = COLOR_PRESENT;
-                        break;
-                    case LETTER_ABSENT:
-                        color = COLOR_ABSENT;
-                        break;
-                }
-            } else if (i == current_attempt && j < current_input_pos) { // Palavra atual sendo digitada
-                color = COLOR_DEFAULT;
-            } else {
-                display_char = '_'; // Espaços vazios para letras não digitadas
+            char color;
+            switch (player_guesses[i].status[j]) {
+                case LETTER_CORRECT:
+                    color = COLOR_CORRECT;
+                    break;
+                case LETTER_PRESENT:
+                    color = COLOR_PRESENT;
+                    break;
+                default:
+                    color = COLOR_ABSENT;
+                    break;
             }
-            kprint_char(display_char, i, j * 2, color); // Multiplica por 2 para espaçamento
+            kprint_char(display_char, i, j * 2, color);
         }
     }
 
-    // Exibe a palavra atual sendo digitada
-    for (int j = 0; j < current_input_pos; j++) {
-        kprint_char(current_input_buffer[j], current_attempt, j * 2, COLOR_DEFAULT);
+    // Desenha a tentativa atual (o que o usuário está digitando)
+    for (int j = 0; j < strlen(current_secret_word); j++) {
+        char display_char = (j < current_input_pos) ? current_input_buffer[j] : '_';
+        char color = (j < current_input_pos) ? COLOR_DEFAULT : COLOR_ABSENT;
+        kprint_char(display_char, current_attempt, j * 2, color);
+    }
+
+    // Desenha os risquinhos para as tentativas futuras
+    for (int i = current_attempt + 1; i < MAX_ATTEMPTS; i++) {
+        for (int j = 0; j < strlen(current_secret_word); j++) {
+            kprint_char('_', i, j * 2, COLOR_ABSENT);
+        }
     }
 
     // Exibe mensagens de estado do jogo
@@ -147,14 +151,17 @@ void termo_check_guess() {
     char temp_secret[WORD_LENGTH];
     strcpy(temp_secret, current_secret_word); // Cria uma cópia para não modificar a palavra secreta original
 
-    // Primeiro, verifica letras corretas e na posição certa
+    // Primeiro, inicializa todos os status como ABSENT
+    for (int i = 0; i < strlen(current_secret_word); i++) {
+        player_guesses[current_attempt].status[i] = LETTER_ABSENT;
+    }
+
+    // Verifica letras corretas e na posição certa (GREEN)
     for (int i = 0; i < strlen(current_secret_word); i++) {
         if (player_guesses[current_attempt].word[i] == temp_secret[i]) {
             player_guesses[current_attempt].status[i] = LETTER_CORRECT;
-            temp_secret[i] = '_';
+            temp_secret[i] = '_'; // Marca a letra como usada na palavra secreta temporária
             correct_letters++;
-        } else {
-            player_guesses[current_attempt].status[i] = LETTER_ABSENT;
         }
     }
 
@@ -164,16 +171,16 @@ void termo_check_guess() {
         return;
     }
 
-    // Em seguida, verifica letras corretas, mas na posição errada (LETTER_PRESENT)
+    // Verifica letras corretas, mas na posição errada (YELLOW)
     for (int i = 0; i < strlen(current_secret_word); i++) {
         if (player_guesses[current_attempt].status[i] == LETTER_CORRECT) {
-            continue;
+            continue; // Já é verde, não precisa verificar novamente
         }
 
         for (int j = 0; j < strlen(current_secret_word); j++) {
-            if (player_guesses[current_attempt].word[i] == temp_secret[j]) {
+            if (player_guesses[current_attempt].word[i] == temp_secret[j] && temp_secret[j] != '_') {
                 player_guesses[current_attempt].status[i] = LETTER_PRESENT;
-                temp_secret[j] = '_'; 
+                temp_secret[j] = '_'; // Marca a letra como usada na palavra secreta temporária
                 break;
             }
         }

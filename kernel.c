@@ -115,11 +115,7 @@ void kprint(const char *str)
 void kprint_newline(void)
 {
 	unsigned int line_size = BYTES_FOR_EACH_ELEMENT * COLUMNS_IN_LINE;
-	unsigned int current_line_end = (current_loc / line_size + 1) * line_size;
-	while (current_loc < current_line_end) {
-		vidptr[current_loc++] = ' ';
-		vidptr[current_loc++] = 0x07;
-	}
+	current_loc = current_loc + (line_size - current_loc % (line_size));
 }
 
 void clear_screen(void)
