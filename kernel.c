@@ -1,4 +1,5 @@
 #include "keyboard_map.h"
+#include "termo_game.h"
 
 /* there are 25 lines each of 80 columns; each element takes 2 bytes */
 #define LINES 25
@@ -13,7 +14,7 @@
 #define KERNEL_CODE_SEGMENT_OFFSET 0x08
 #define ENTER_KEY_CODE 0x1C
 
-extern unsigned char keyboard_map[128];
+extern unsigned char keyboard_map[256];
 
 extern void keyboard_handler(void);
 
@@ -22,6 +23,10 @@ extern char read_port(unsigned short port);
 extern void write_port(unsigned short port, unsigned char data);
 
 extern void load_idt(unsigned long *idt_ptr);
+
+extern void set_cursor(int row, int col);
+
+extern void kprint_chatr(char c, int row, int col, char color);
 
 /* current cursor location */
 unsigned int current_loc = 0;
@@ -110,7 +115,11 @@ void kprint(const char *str)
 void kprint_newline(void)
 {
 	unsigned int line_size = BYTES_FOR_EACH_ELEMENT * COLUMNS_IN_LINE;
-	current_loc = current_loc + (line_size - current_loc % (line_size));
+	unsigned int current_line_end = (current_loc / line_size + 1) * line_size;
+	while (current_loc < current_line_end) {
+		vidptr[current_loc++] = ' ';
+		vidptr[current_loc++] = 0x07;
+	}
 }
 
 void clear_screen(void)
@@ -126,6 +135,7 @@ void keyboard_handler_main(void)
 {
 	unsigned char status;
 	char keycode;
+    char key_char;
 
 	/* write EOI */
 	write_port(0x20, 0x20);
@@ -137,22 +147,33 @@ void keyboard_handler_main(void)
 		if(keycode < 0)
 			return;
 
-		if(keycode == ENTER_KEY_CODE) {
-			kprint_newline();
-			return;
-		}
+        key_char = keyboard_map[(unsigned char) keycode];
 
-		vidptr[current_loc++] = keyboard_map[(unsigned char) keycode];
-		vidptr[current_loc++] = 0x07;
+        // Passa o caractere para a função de processamento de input do jogo
+        termo_process_input(key_char);
+
+        // Após processar o input, atualiza a tela do jogo
+        termo_update_screen();
 	}
 }
 
+void kprint_char(char c, int row, int col, char color) {
+    unsigned int offset = (row * COLUMNS_IN_LINE + col) * BYTES_FOR_EACH_ELEMENT;
+    vidptr[offset] = c;
+    vidptr[offset + 1] = color;
+}
 
-
+void set_cursor(int row, int col){
+	unsigned short pos = row * COLUMNS_IN_LINE + col;
+	write_port(0x3D4, 0x0F); 
+	write_port(0x3D5, (unsigned char)(pos & 0xFF));
+	write_port(0x3D4, 0x0E); 
+	write_port(0x3D5, (unsigned char)((pos >> 8) & 0xFF));
+}
 
 void kmain(void)
 {
-	const char *str = "my first kernel with keyboard support";
+	const char *str = "my first kernel";
 	clear_screen();
 	kprint(str);
 	kprint_newline();
@@ -161,7 +182,8 @@ void kmain(void)
 	idt_init();
 	kb_init();
 
-	
+    termo_init_game(); // Inicializa o jogo Termo
+    termo_update_screen(); // Desenha a tela inicial do jogo
 
 	while(1);
 }
