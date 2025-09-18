@@ -1,7 +1,7 @@
 #ifndef TERMO_GAME_H
 #define TERMO_GAME_H
 
-#define WORD_LENGTH 6 // 'thunder' e 'ratz' têm 6 caracteres com o terminador null
+#define WORD_LENGTH 6 
 #define MAX_ATTEMPTS 6
 
 typedef enum {
@@ -18,7 +18,7 @@ typedef enum {
 
 typedef struct {
     char word[WORD_LENGTH];
-    LetterStatus status[WORD_LENGTH - 1]; // Status para cada letra da palavra (excluindo null terminator)
+    LetterStatus status[WORD_LENGTH - 1];
 } Guess;
 
 // Variáveis globais do jogo
@@ -31,6 +31,7 @@ extern int current_input_pos;
 extern int current_attempt;
 extern GameState game_state;
 extern void kprint_char(char c, int row, int col, char color);
+
 // Funções do jogo
 void termo_init_game();
 void termo_process_input(char key_char);
@@ -39,4 +40,4 @@ void termo_check_guess();
 void termo_display_keyboard_status();
 void termo_reset_game();
 
-#endif // TERMO_GAME_H
+#endif 

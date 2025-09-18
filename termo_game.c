@@ -14,7 +14,7 @@ void set_cursor(int row, int col);
 const char* secret_words[] = {"thunder", "ratz"};
 const int num_secret_words = sizeof(secret_words) / sizeof(secret_words[0]);
 char current_secret_word[WORD_LENGTH];
-int next_word = 0; // Muda esse valor para trocar a palavra secreta
+int next_word = 0; 
 
 // Estado do jogo
 Guess player_guesses[MAX_ATTEMPTS];
