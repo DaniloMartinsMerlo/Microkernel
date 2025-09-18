@@ -1,7 +1,6 @@
 #include "keyboard_map.h"
 #include "termo_game.h"
 
-/* there are 25 lines each of 80 columns; each element takes 2 bytes */
 #define LINES 25
 #define COLUMNS_IN_LINE 80
 #define BYTES_FOR_EACH_ELEMENT 2
@@ -169,12 +168,6 @@ void set_cursor(int row, int col){
 
 void kmain(void)
 {
-	const char *str = "my first kernel";
-	clear_screen();
-	kprint(str);
-	kprint_newline();
-	kprint_newline();
-
 	idt_init();
 	kb_init();
 

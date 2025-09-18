@@ -14,6 +14,7 @@ void set_cursor(int row, int col);
 const char* secret_words[] = {"thunder", "ratz"};
 const int num_secret_words = sizeof(secret_words) / sizeof(secret_words[0]);
 char current_secret_word[WORD_LENGTH];
+int next_word = 0; // Muda esse valor para trocar a palavra secreta
 
 // Estado do jogo
 Guess player_guesses[MAX_ATTEMPTS];
@@ -31,7 +32,7 @@ extern void set_cursor(int row, int col);
 
 void termo_init_game() {
     clear_screen();
-    strcpy(current_secret_word, secret_words[0]);
+    strcpy(current_secret_word, secret_words[next_word]);
 
     // Inicializa as tentativas do jogador
     for (int i = 0; i < MAX_ATTEMPTS; i++) {
@@ -54,6 +55,7 @@ void termo_init_game() {
 void termo_process_input(char key_char) {
     if (game_state != GAME_ONGOING) {
         if (key_char == '\n') {
+            next_word = (next_word + 1) % num_secret_words; 
             termo_reset_game();
         }
         return;
